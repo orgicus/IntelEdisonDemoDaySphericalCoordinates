@@ -74,4 +74,4 @@ via ssh or Serial
 Upload the Arduino sketch if you haven't done so already.
 
 If all these are setup you should be able the client html page on your smartphone or computer's browser 
-either by using [edison's host name](http://edison.local/wsclient.html) or it's IP (e.g. ```http://192.168.X.X/wscliet.html``` where ```X```s are the rest of the ip address to your Edison)
+either by using [edison's host name](http://edison.local/wsclient.html) or it's IP (e.g. ```http://192.168.X.X/wsclient.html``` where ```X```s are the rest of the ip address to your Edison)
