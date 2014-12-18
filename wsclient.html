@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	<meta name="viewport" content="width=device-width,initial-scale=1.5">
+
+	<title>Spherical Coordinates</title>
+	<style type="text/css" media="screen">
+		body {
+		    background:black; 
+		    margin:0px; 
+		    overflow:hidden;  
+		}​
+	</style>
+<style type="text/css"></style></head>
+<body>
+<script type="text/javascript" charset="utf-8">
+	if ( !window.requestAnimationFrame ) {//http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+		window.requestAnimationFrame = ( function() {
+			return window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame ||
+			window.oRequestAnimationFrame ||
+			window.msRequestAnimationFrame ||
+			function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element ) {
+				window.setTimeout( callback, 1000 / 60 );
+			};
+		} )();
+	}
+	
+	var canvas = document.createElement('canvas'),
+	    width = canvas.width = window.innerWidth,//setup document,canvas width
+	    height = canvas.height = window.innerHeight,//..and document,canvas height
+	    halfWidth = width / 2, // store the centre coordinates
+	    halfHeight = height / 2,//we'll need them later
+	    fov = 350,//field of view for 3d camera
+	    counter = 0, //a simple counter to fade colours based on
+	    mouseX = 0,
+	    mouseY = 0,
+		sin = Math.sin,//cache common operations to local scope
+		cos = Math.cos,
+		pi  = Math.PI,
+		cosR = 0,//we'll store the cosine for any 3D rotation here
+		sinR = 0,//and the sine value here
+		rad = 200,//radius of the sphere
+		aInc = pi * .0005,//angle increment
+		numPts = ((pi * 2 / aInc)>>0),//the total number of points to render on screen
+		sInc = 18,//lat. increment
+		tInc = 1,//lon. increment
+		s = 0, t = 0,//lat,lon count
+		rx = 0, ry = 0,//sphere x,y rotation
+		r = 225,g = 75,b = 50,//colour of the sphere
+		mouseScale = 0.00005;//how much the mouse affects rotation
+	
+	var temp,sound,light;
+	//setup mouse/touch events
+    document.body.addEventListener("mousemove", onMouseMove, false);
+	document.body.addEventListener("touchmove", onDocumentTouchMove, false );
+	//create a canvas element and append it to the body element
+	var context = canvas.getContext('2d');
+	document.body.appendChild(canvas);
+	
+	//read websockets data from edison, be sure to point to your edison's ip or name here (find the ip by running configure_edison --showWiFiIP via ssh or Serial )
+	var ws = new WebSocket ("ws:edison.local:8888");
+	ws.onopen = function(){
+		console.log("WebSocket Opened");
+	}	
+	ws.onmessage = function(evt) {
+        // console.log(evt.data);
+        var data = evt.data.split(",");
+        temp  = parseFloat(data[0]);
+        sound = parseFloat(data[1]);
+        light = parseFloat(data[2]);
+        //map sensor values to sphere parameters
+		sInc = map(sound,0,255,32,360);
+    	tInc = map(light,0,255,.1,8);
+		r    = map(temp,-20,-10,0,255);//map temperature sensor to amount of red in the colour. tweak min/max input values based on what temp.ranges you expect during the demo
+	}
+	ws.onclose = function(){
+		console.log("WebSocket Closed");
+	}
+	ws.onerror = function (error) {
+	  console.log('WebSocket Error ');
+	  console.log(error);
+	};
+	animate();
+	function animate() {
+		requestAnimationFrame( animate );
+		render();
+	}
+	function render() {
+	    counter++; //update counter
+	    //clear screen
+	    context.fillStyle = "rgba(0,0,0,0.25)"; //transparent black = don't fully clear the buffer = fade
+	    context.fillRect(0, 0, width, height);
+	    var imagedata = context.getImageData(0, 0, canvas.width, canvas.height);//access pixels
+
+	    s = 0,t = 0;//reset current lat/lon section
+	    var i = numPts;//start counting backwards (should be faster)
+	    while (i--) {
+	    	s+=sInc;t+=tInc;//increment lat/lon
+	        //compute spherical to cartesian coordinates -> see formula here: http://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
+	        var x = rad * cos(s) * sin(t);
+	        var y = rad * sin(s) * sin(t);
+	        var z = rad * cos(t);
+	        //rotateY
+	        cosR = cos(ry);
+	        sinR = sin(ry);
+
+	        var tempz = z;
+	        var tempy = y;
+	        var tempx = x; 
+
+	        x = (tempx*cosR)+(tempz*sinR);
+	        z = (tempx*-sinR)+(tempz*cosR);
+	        //rotateX
+	        cosR = cos(rx);
+	        sinR = sin(rx);
+
+	        tempz = z; 
+	        
+	        y = (tempy*cosR)+(tempz*sinR);
+	        z = (tempy*-sinR)+(tempz*cosR);
+	        //convert 3D to 2D coordinates
+			var scale = fov / (fov + z);
+	        var x2d = (x * scale) + halfWidth; 
+	        var y2d = (y * scale) + halfHeight; 
+
+	        var brightness = (sin((counter-i)*0.1)+1);
+	        //blend mode add with each pixel
+	        blendAdd(imagedata, x2d, y2d,r*brightness+10,g*brightness,b*brightness); 
+
+	    }
+	    //put all the pixels back into the image
+	    context.putImageData(imagedata, 0, 0);
+	    //update rotation
+        rx += (mouseY*mouseScale);
+        ry += (mouseX*mouseScale);
+	}
+	//thanks to Seb Lee Delisle's JS tutorial
+	function blendAdd(imagedata, x, y, r, g, b) {
+
+	    if((x<0) || (x>width) || (y<0) || (y>width)) return; 
+
+	    var i = ((y>>0) * imagedata.width + (x>>0)) * 4;
+
+	    r = (imagedata.data[i]+r);
+	    g = (imagedata.data[i+1]+g); 
+	    b = (imagedata.data[i+2]+b); 
+
+	    imagedata.data[i] = r;
+	    imagedata.data[i+1] = g;
+	    imagedata.data[i+2] = b;
+	    imagedata.data[i+3] = 255;
+	}
+	//update mouse coordinates based on mouse/touch updates
+	function onMouseMove(event) {
+		event.preventDefault();
+	    mouseX = (halfWidth - event.clientX);
+	    mouseY = (halfHeight - event.clientY);
+	}
+	function onDocumentTouchMove(event) {
+		if (event.touches.length === 1) {
+			event.preventDefault();
+			mouseX = event.touches[0].pageX - halfWidth;
+			mouseY = event.touches[0].pageY - halfHeight;
+		}
+	}
+	//linear mapping a-la Processing, pass the value you want to map, it's min/max range(start1,stop1) and it's target min/max range
+	function map(value,start1, stop1,start2, stop2) {
+		return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+	}
+</script>
+
+
+</body></html>
