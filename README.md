@@ -10,9 +10,9 @@ It's a standalone demo: it can work without an internet connection since the Edi
 act as a WiFi Access Point. This demo can also be coded using the [iotkit](https://github.com/enableiot/iotkit-agent).
 
 The current implementation however has the following components:
-1. An Arduino sketch that reads sensor data and sends it to localhost via UDP 
-2. A Python script which receives the sensor data via UDP, but also acts as a websocket server thus forwarding the UDP data to the browser.
-3. An html page which is the websocket client, reading sensor data, then mapping it as parameters for a 3D sphere rendered in a 2D canvas
+ 1. An Arduino sketch that reads sensor data and sends it to localhost via UDP 
+ 2. A Python script which receives the sensor data via UDP, but also acts as a websocket server thus forwarding the UDP data to the browser.
+ 3. An html page which is the websocket client, reading sensor data, then mapping it as parameters for a 3D sphere rendered in a 2D canvas
 (which can be viewed on computers and smartphones as well)
 
 Setup
