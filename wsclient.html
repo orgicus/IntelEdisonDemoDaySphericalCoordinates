@@ -72,7 +72,7 @@
         //map sensor values to sphere parameters
 		sInc = map(sound,0,255,32,360);
     	tInc = map(light,0,255,.1,8);
-		r    = map(temp,-20,-10,0,255);//map temperature sensor to amount of red in the colour. tweak min/max input values based on what temp.ranges you expect during the demo
+		r    = map(temp,20,30,0,255);//map temperature sensor to amount of red in the colour. tweak min/max input values based on what temp.ranges you expect during the demo
 	}
 	ws.onclose = function(){
 		console.log("WebSocket Closed");
