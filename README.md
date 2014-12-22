@@ -52,7 +52,7 @@ I've placed the files in ```/usr/lib/edison_config_tools/public``` which is prob
 public folder to drop some files because Edison's already running an HTTP server at that location.
 Feel free to use other public http server location if you like.
 
-In terms of transferind files I've found [FileZilla](https://filezilla-project.org/download.php?type=client) as a quick solution. 
+In terms of transfering files I've found [FileZilla](https://filezilla-project.org/download.php?type=client) as a quick solution. 
 Simply setup a new site pointing to your edison, using SFTP as the transfer protocol, "Ask for password as the logon type" with username ```root```.
 
 One that's setup run the WS server:
@@ -75,3 +75,33 @@ Upload the Arduino sketch if you haven't done so already.
 
 If all these are setup you should be able the client html page on your smartphone or computer's browser 
 either by using [edison's host name](http://edison.local/wsclient.html) or it's IP (e.g. ```http://192.168.X.X/wsclient.html``` where ```X```s are the rest of the ip address to your Edison)
+
+**Note** The configuration webserver may not be running by default on all Edison boards for various reasons.
+If this is the case you should be able to start it manually like this:
+```
+configure_edison --server
+```
+or 
+```
+/bin/su root -c 'node /usr/lib/edison_config_tools/edison-config-server.js'
+```
+
+I've actually found the above command in the system daemon located here:
+```
+/lib/systemd/system/edison_config.service
+```
+which has this configuration
+```
+[Unit]
+Description=The Edison status and configuration service
+After=mdns.service
+
+[Service]
+ExecStart=/bin/su root -c 'node /usr/lib/edison_config_tools/edison-config-server.js'
+Restart=always
+RestartSec=10s
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=default.target
+```
